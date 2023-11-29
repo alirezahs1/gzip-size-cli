@@ -1,6 +1,7 @@
 # gzip-size-cli
 
-> Get the gzipped size of a file or stdin
+> Get the gzipped size of a file or stdin \
+> Added support of **patterns** compared to [main version](https://github.com/sindresorhus/gzip-size-cli)
 
 ## Install
 
