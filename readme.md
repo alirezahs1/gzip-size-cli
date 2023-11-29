@@ -5,7 +5,7 @@
 ## Install
 
 ```sh
-npm install --global gzip-size-cli
+npm install --global git+https://github.com/alirezahs1/gzip-size-cli
 ```
 
 ## Usage
@@ -14,7 +14,7 @@ npm install --global gzip-size-cli
 $ gzip-size --help
 
   Usage
-    $ gzip-size <file>
+    $ gzip-size <pattern>
     $ cat <file> | gzip-size
 
   Options
@@ -29,6 +29,7 @@ $ gzip-size --help
     192256
     $ gzip-size unicorn.png --include-original
     392 kB → 192 kB
+		$ gzip-size build/**/*.js
 ```
 
 ## Related
