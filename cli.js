@@ -6,10 +6,11 @@ import prettyBytes from 'pretty-bytes';
 import {gzipSizeSync} from 'gzip-size';
 import chalk from 'chalk';
 import getStdin from 'get-stdin';
+import glob from 'glob';
 
 const cli = meow(`
 	Usage
-	  $ gzip-size <file>
+	  $ gzip-size '<pattern>'
 	  $ cat <file> | gzip-size
 
 	Options
@@ -39,9 +40,9 @@ const cli = meow(`
 	},
 });
 
-const [input] = cli.input;
+const [pattern] = cli.input;
 
-if (!input && process.stdin.isTTY) {
+if (!pattern && process.stdin.isTTY) {
 	console.error('Specify a file path');
 	process.exit(1);
 }
@@ -51,22 +52,42 @@ if (cli.flags.level) {
 	options.level = cli.flags.level;
 }
 
-function output(data) {
+function output(originalSize, gzippedSize, postfix='') {
+	let message = cli.flags.raw ? gzippedSize : prettyBytes(gzippedSize);
+	if (cli.flags.includeOriginal) {
+		message = (cli.flags.raw ? originalSize : prettyBytes(originalSize)) + chalk.dim(' → ') + message;
+	}
+
+	console.log(message, postfix);
+}
+
+function getSize(data) {
 	const originalSize = data.length;
 	const gzippedSize = gzipSizeSync(data);
 
-	let output = cli.flags.raw ? gzippedSize : prettyBytes(gzippedSize);
-	if (cli.flags.includeOriginal) {
-		output = (cli.flags.raw ? originalSize : prettyBytes(originalSize)) + chalk.dim(' → ') + output;
-	}
-
-	console.log(output);
+	return [originalSize, gzippedSize];
 }
 
 (async () => {
-	if (input) {
-		output(fs.readFileSync(input));
+	if (pattern) {
+		let totalOriginialSize = 0;
+		let totalGzippedSize = 0;
+
+		const files = glob.sync(pattern);
+
+		files.forEach(file => {
+			const [originalSize, gzippedSize] = getSize(fs.readFileSync(file));
+			output(originalSize, gzippedSize, file);
+			totalOriginialSize += originalSize;
+			totalGzippedSize += gzippedSize;
+		});
+
+		if (files.length > 1) {
+			console.log('------------\nTotal:');
+			output(totalOriginialSize, totalGzippedSize);
+		}
 	} else {
-		output(await getStdin.buffer());
+		const size = getSize(await getStdin.buffer());
+		output(...size);
 	}
 })();
